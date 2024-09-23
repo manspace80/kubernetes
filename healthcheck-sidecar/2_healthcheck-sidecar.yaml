@@ -1,0 +1,104 @@
+---
+kind: Namespace
+apiVersion: v1
+metadata:
+  name: tt3
+  labels:
+    name: tt3
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nginx-config
+  namespace: tt3
+data:
+  default.conf: |
+    server {
+        listen       80;
+        listen  [::]:80;
+        server_name  localhost;
+        location / {
+            root   /usr/share/nginx/html;
+            index  index.html index.htm;
+        }
+        error_page   500 502 503 504  /50x.html;
+        location = /50x.html {
+            root   /usr/share/nginx/html;
+        }
+    }
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-deployment
+  namespace: tt3
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nginx
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      serviceAccountName: pod-restart-sa  # Hier wird der ServiceAccount verwendet
+      containers:
+      - name: nginx
+        image: nginx:latest
+        ports:
+        - containerPort: 80
+        volumeMounts:
+        - name: nginx-config
+          mountPath: /etc/nginx/conf.d 
+          readOnly: true
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 80
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 80
+          initialDelaySeconds: 5
+          periodSeconds: 10
+      - name: healthcheck-sidecar
+        image: curlimages/curl:latest
+        command: ["/bin/sh"]
+        args:
+        - -c
+        - |
+          while true; do
+            wget -q --spider http://localhost:80
+            if [ $? -ne 0 ]; then
+              echo "Nginx is down, restarting pod..."
+              TOKEN=$(cat /var/run/secrets/kubernetes.io/serviceaccount/token)
+              CA_CERT=/var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+              curl -X DELETE --header "Authorization: Bearer ${TOKEN}" \
+                --cacert ${CA_CERT} \
+                https://kubernetes.default.svc/api/v1/namespaces/tt3/pods/$(hostname)
+            else
+              echo "Nginx is up"
+            fi
+            sleep 10
+          done
+      volumes:
+      - name: nginx-config
+        configMap: 
+          name: nginx-config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: nginx-service
+  namespace: tt3
+spec:
+  selector:
+    app: nginx
+  ports:
+  - protocol: TCP
+    port: 80
+    targetPort: 80
+  type: LoadBalancer  # Alternativ: NodePort, LoadBalancer, je nach Bedarf

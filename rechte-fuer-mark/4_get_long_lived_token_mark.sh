@@ -8,10 +8,10 @@ do
 	TOKEN=$(kubectl get secrets token-${U} -n tt3 -o json| jq -r '.data.token'|base64 -d)
 	echo "${TOKEN}"
 	#echo "${TOKEN}" > ${DATADIR}/${U}_long_live.token
-	/usr/bin/cp ${HOME}/.kube/config ${HOME}/.kube/config-mark
-	kubectl config set-context super-${U} --cluster default --user ${U} --kubeconfig ${HOME}/.kube/config-mark
-	kubectl config set-credentials ${U} --token=${TOKEN} --kubeconfig ${HOME}/.kube/config-mark
-	kubectl config use-context super-${U} --kubeconfig ${HOME}/.kube/config-mark
-	kubectl config delete-context default --kubeconfig ${HOME}/.kube/config-mark
-	kubectl config delete-user default --kubeconfig ${HOME}/.kube/config-mark
+	/usr/bin/cp ${HOME}/.kube/config ${HOME}/.kube/config-${U}
+	kubectl config set-context super-${U} --cluster default --user ${U} --kubeconfig ${HOME}/.kube/config-${U}
+	kubectl config set-credentials ${U} --token=${TOKEN} --kubeconfig ${HOME}/.kube/config-${U}
+	kubectl config use-context super-${U} --kubeconfig ${HOME}/.kube/config-${U}
+	kubectl config delete-context default --kubeconfig ${HOME}/.kube/config-${U}
+	kubectl config delete-user default --kubeconfig ${HOME}/.kube/config-${U}
 done

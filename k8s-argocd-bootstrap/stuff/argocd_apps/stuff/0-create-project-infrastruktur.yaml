@@ -1,0 +1,22 @@
+# argo-project.yaml
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: infrastruktur
+  namespace: argocd
+spec:
+  description: "Projekt für Infrastruktur"
+  sourceRepos:
+    - 'https://git67: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@github.com/git67/k8s-argocd-bootstrap'
+  destinations:
+    - namespace: '*'
+      server: 'https://kubernetes.default.svc'
+  clusterResourceWhitelist:
+    - group: '*'
+      kind: '*'
+  namespaceResourceBlacklist:
+    - group: '*'
+      kind: 'Event'
+  syncWindows: []
+  orphanedResources:
+    warn: false

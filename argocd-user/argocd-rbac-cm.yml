@@ -10,6 +10,9 @@ data:
   policy.csv: |
     p, role:custom-role, applications, sync, bootstrap/web2, allow
     p, role:custom-role, applications, get, bootstrap/*, allow
+    p, role:custom-role, applications, *, test/*, allow
+    p, role:custom-role, projects, create, *, allow
+    p, role:custom-role, projects, get, *, allow
     #p, role:custom-role, applications, get, default/*, allow
     #p, role:custom-role, applications, get, *, allow
 
